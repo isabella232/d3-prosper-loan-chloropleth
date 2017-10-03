@@ -6,78 +6,184 @@
   <link rel="stylesheet" type="text/css" href="resources/css/style.css">
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script type ="text/javascript" src ="resources/d3-slider-master/d3.slider.js"/></script>
+  <script src="http://d3js.org/queue.v1.min.js"></script>
 
     <script type="text/javascript">
 
-      function draw(geoData) {
+      window.onload = initialize();
 
-        var margin = 200,
-            width = 1400 - margin,
-            height = 600 - margin;
+      function initialize(){
+        loadData();
+      };
 
-        var svg = d3.select("body")
-            .append("svg")
-            .attr("width", width + margin)
-            .attr("height", height + margin)
-            .append('g')
-            .attr('class', 'map');
+      function loadData(){
+        queue()
+        .defer(d3.csv, "data/prosperLoanData.csv", function(d) {
+              d['loanStart'] = new Date(d['LoanOriginationDate']);
+              d['loanYear'] = d['loanStart'].getFullYear();
+              return d;
+            })
+        .defer(d3.json, "data/us_states.json")
+        .await(callback);
 
-        var slider_div = d3.select("body")
-            .append("div")
-            .attr("width", 800)
-            .attr('class', 'slider');
+        function callback(error, loanData, geoData){
 
-        var projection = d3.geo.albersUsa()
-                               .scale(600)
-                               .translate([width / 2, height / 1.2]);
+          var nested, total_max = formatData(loanData);
 
-        var path = d3.geo.path().projection(projection);
+          debugger
+          function formatData(loanData){
 
-        var map = svg.selectAll('path')
-                     .data(geoData.features)
-                     .enter()
-                     .append('path')
-                     .attr('d', path)
-                     .style('fill', 'lightGrey')
-                     .style('stroke', 'black')
-                     .style('stroke-width', 0.5);
+            function agg_state_by_year(leaves){
 
+              var total = d3.sum(leaves, function(d){
+                  return d['LoanOriginalAmount'];
+              });
 
-        var slider = d3.select(".slider")
-                       .call(d3.slider()
-                       .axis(true)
-                       .min(2007)
-                       .max(2014)
-                       .step(1)
-                       .on("slide", function(evt, value) {
-                        console.log("The slider's current value is:" + value);
-                        colorMap(value);
-                      }));
+              var year = leaves[0]['loanYear']
 
-        function colorMap(year){
+              var state = leaves[0]['BorrowerState'];
 
-        };
+              return {
+                'year': year,
+                'state': state,
+                'total': total
+              }
 
-        function formatData(loanData){
-          debugger;
-          colorMap(year);
+            }
 
-        };
+            var nested = d3.nest()
+                           .key(function(d) {
+                              return d['loanStart'].getUTCFullYear();
+                           })
+                           .key(function(d) {
+                             return d['BorrowerState'];
+                           })
+                           .rollup(agg_state_by_year)
+                           .entries(loanData);
 
+           var total_max = d3.max(nested, function(d) {
+               return d.values[0].values['total'];
+           });
 
+           debugger;
+           return nested, total_max
+          }
+      }
+    }
 
-        d3.csv("data/prosperLoanData.csv", function(d) {
-          return d;
-        }, formatData);
+      //
+      // function drawMap(geoData) {
+      //
+      //   var margin = 200,
+      //       width = 1400 - margin,
+      //       height = 600 - margin;
+      //
+      //   var svg = d3.select("body")
+      //       .append("svg")
+      //       .attr("width", width + margin)
+      //       .attr("height", height + margin)
+      //       .append('g')
+      //       .attr('class', 'map');
+      //
+      //   var slider_div = d3.select("body")
+      //       .append("div")
+      //       .attr("width", 800)
+      //       .attr('class', 'slider');
+      //
+      //   // var projection = d3.geo.albersUsa()
+      //   //                        .scale(600)
+      //   //                        .translate([width / 2, height / 1.2]);
+      //   //
+      //   // var path = d3.geo.path().projection(projection);
+      //   //
+      //   // var map = svg.selectAll('path')
+      //   //              .data(geoData.features)
+      //   //              .enter()
+      //   //              .append('path')
+      //   //              .attr('d', path)
+      //   //              .style('fill', 'lightGrey')
+      //   //              .style('stroke', 'black')
+      //   //              .style('stroke-width', 0.5);
+      //
+      //
+      //   var slider = d3.select(".slider")
+      //                  .call(d3.slider()
+      //                  .axis(true)
+      //                  .min(2006)
+      //                  .max(2014)
+      //                  .step(1)
+      //                  .on("slide", function(evt, value) {
+      //                   console.log("The slider's current value is:" + value);
+      //                   colorMap(year);
+      //                 }));
+      //
+      //   function colorMap(year){
+      //
+      //   };
+      //
+      //   function formatData(loanData){
+      //
+      //     function agg_state_by_year(leaves){
+      //
+      //       var total = d3.sum(leaves, function(d){
+      //         return d['LoanOriginalAmount'];
+      //       });
+      //
+      //       var year = leaves[0]['loanYear']
+      //
+      //       var state = leaves[0]['BorrowerState'];
+      //
+      //       return {
+      //         'year': year,
+      //         'state': state,
+      //         'total': total
+      //       }
+      //
+      //     }
+      //
+      //     var nested = d3.nest()
+      //                    .key(function(d) {
+      //                       return d['loanStart'].getUTCFullYear();
+      //                    })
+      //                    .key(function(d) {
+      //                      return d['BorrowerState'];
+      //                    })
+      //                    .rollup(agg_state_by_year)
+      //                    .entries(loanData);
+      //
+      //      var projection = d3.geo.albersUsa()
+      //                             .scale(600)
+      //                             .translate([width / 2, height / 1.2]);
+      //
+      //      var path = d3.geo.path().projection(projection);
+      //
+      //      var map = svg.selectAll('path')
+      //                   .data(geoData.features)
+      //                   .enter()
+      //                   .append('path')
+      //                   .attr('d', path)
+      //                   .style('fill', 'lightGrey')
+      //                   .style('stroke', 'black')
+      //                   .style('stroke-width', 0.5);
+      //
+      //   };
+      //
+      //   d3.csv("data/prosperLoanData.csv", function(d) {
+      //     d['loanStart'] = new Date(d['LoanOriginationDate']);
+      //     d['loanYear'] = d['loanStart'].getFullYear();
+      //     return d;
+      //   }, formatData);
 
-}
+// }
 </script>
 
   </head>
 <body>
   <script type="text/javascript">
 
-    d3.json("data/us_states.json", draw);
+
+
+  // d3.json("data/us_states.json", drawMap);
 
   </script>
 </body>
