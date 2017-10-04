@@ -72,15 +72,16 @@
 
           pageData['loans'] = nested;
           pageData['geo'] = geoData;
+          pageData['colorScale'] = colorScale();
 
           callback(nested, geoData, year)
 
         }
 
         formatData(loanData, function(nested, geoData, year){
-          colorMap(nested, geoData, year);
-          addSlider();
-          runYearAnimation();
+            colorMap(nested, geoData, year);
+            addLegend();
+            runYearAnimation();
         });
       }
 
@@ -88,7 +89,7 @@
 
           var margin = 200,
               width = 1400 - margin,
-              height = 600 - margin;
+              height = 550 - margin;
 
           var svg = d3.select("body")
               .append("svg")
@@ -96,26 +97,12 @@
               .attr("width", width + margin)
               .attr("height", height + margin)
               .attr("x",0)
-              .attr("y",0)
+              .attr("y",10000)
               .append('g')
               .attr('class', 'map');
 
-          var projection = d3.geo.albersUsa()
-                                  .scale(50)
-                                  .translate([width / 2, height / 1.2]);
 
           var path = d3.geo.path();
-
-          var totalMin = d3.min(nested, function(d) {
-              return d.values[0].values['total'];
-          });
-
-          var totalMax = d3.max(nested, function(d) {
-              return d.values[0].values['total'];
-          });
-
-          var color = d3.scaleSequential(d3.interpolateBlues)
-                        .domain([totalMin,totalMax]);
 
           var yearKey = _.findKey(nested,{ 'key': year }) ;
 
@@ -130,7 +117,7 @@
                                         { 'key': abbr[d.properties.name]['abbr'] });
                           if (abbrKey) {
                             var total = nested[yearKey].values[abbrKey].values.total;
-                            return color(total);
+                            return pageData['colorScale'](total);
                           }
                         })
                         .style('stroke', 'black')
@@ -144,8 +131,9 @@
                             .attr("width", 800)
                             .attr('class', 'slider');
 
-          var slider = d3.select(".slider")
+          pageData['slider']  = d3.select(".slider")
                          .call(d3.slider()
+                         .value(2013)
                          .axis(true)
                          .min(2006)
                          .max(2013)
@@ -158,6 +146,27 @@
                              colorMap(pageData['loans'], pageData['geo'], year.toString())
                         })
                       );
+      }
+
+      function colorScale(){
+
+        var totalMin = d3.min(pageData['loans'], function(d) {
+            return d.values[0].values['total'];
+        });
+
+        var totalMax = d3.max(pageData['loans'], function(d) {
+            return d.values[0].values['total'];
+        });
+
+        var color = d3.scaleSequential(d3.interpolateYlGn)
+                      .domain([totalMin,totalMax]);
+
+        return color
+      }
+
+      function addLegend(){
+
+
       }
 
 
@@ -173,15 +182,14 @@
 
           colorMap(pageData['loans'], pageData['geo'], years[yearIdx])
 
-          d3.select('.d3-slider-handle')
-
           if (years[yearIdx] == '2013') {
             clearInterval(yearInterval)
+            addSlider();
           }
 
           yearIdx++;
 
-        }, 1500);
+        }, 1000);
 
       }
 
