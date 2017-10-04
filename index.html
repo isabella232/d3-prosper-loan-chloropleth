@@ -13,150 +13,172 @@
 <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
 <script src="https://d3js.org/d3-scale.v1.min.js"></script>
 
-    <script type="text/javascript">
+<script type="text/javascript">
 
-      window.onload = initialize();
+var pageData = {};
 
-      function initialize(){
-        loadData();
-      };
+window.onload = loadData();
 
-      function loadData(){
-        queue()
-        .defer(d3.csv, "data/prosperLoanData.csv", function(d) {
-              d['loanStart'] = new Date(d['LoanOriginationDate']);
-              d['loanYear'] = d['loanStart'].getFullYear();
+function loadData(){
+  queue()
+  .defer(d3.csv, "data/prosperLoanData.csv", function(d) {
+        d['loanStart'] = new Date(d['LoanOriginationDate']);
+        d['loanYear'] = d['loanStart'].getFullYear();
+        if (d.BorrowerState != ""){ return d;
+        }
+      })
+  .defer(d3.json, "data/us_states.json")
+  .await(callback);
+}
 
-              if (d.BorrowerState != ""){
-                return d;
-              }
-            })
-        .defer(d3.json, "data/us_states.json")
-        .await(callback);
+function callback(error, loanData, geoData){
 
-        function callback(error, loanData, geoData){
+  function formatData(loanData, callback){
 
-          function formatData(loanData, callback){
+    function agg_state_by_year(leaves){
 
+      var year = leaves[0]['loanYear'],
+          state = leaves[0]['BorrowerState'],
+          state_pop = 0;
 
-
-            function agg_state_by_year(leaves){
-
-              var year = leaves[0]['loanYear'],
-                  state = leaves[0]['BorrowerState'],
-                  state_pop = 0;
-
-              if (state != "") {
-               var key = _.findKey( Object.values(abbr), { 'abbr':  state} )
-               var state_pop = Object.values(abbr)[key]['pop']
-              }
-
-              var total = d3.sum(leaves, function(d){
-                  return d['LoanOriginalAmount'];
-              });
-
-              var norm_total = total / state_pop;
-
-              return {
-                'year': year,
-                'state': state,
-                'total': norm_total
-              }
-            }
-
-            var nested = d3.nest()
-                           .key(function(d) {
-                              return d['loanStart'].getUTCFullYear();
-                           })
-                           .key(function(d) {
-                             return d['BorrowerState'];
-                           })
-                           .rollup(agg_state_by_year)
-                           .entries(loanData);
-
-           callback(nested, geoData)
-
-          }
-
-          formatData(loanData, function(nested, geoData){
-            colorMap(nested, geoData)
-          });
+      if (state != "") {
+       var key = _.findKey( Object.values(abbr), { 'abbr':  state} )
+       var state_pop = Object.values(abbr)[key]['pop']
       }
 
-      function colorMap(nested, geoData){
+      var total = d3.sum(leaves, function(d){
+          return d['LoanOriginalAmount'];
+      });
 
-          var margin = 200,
-              width = 1400 - margin,
-              height = 600 - margin;
+      var norm_total = total / state_pop;
 
-          var svg = d3.select("body")
-              .append("svg")
-              .attr("width", width + margin)
-              .attr("height", height + margin)
-              .append('g')
-              .attr('class', 'map');
-
-          var projection = d3.geo.albersUsa()
-                                  .scale(100)
-                                  .translate([width / 2, height / 1.2]);
-
-          var path = d3.geo.path();
-
-          var total_min = d3.min(nested, function(d) {
-              return d.values[0].values['total'];
-          });
-
-          var total_max = d3.max(nested, function(d) {
-              return d.values[0].values['total'];
-          });
-
-          var color = d3.scaleSequential(d3.interpolateBlues)
-                        .domain([total_min,total_max]);
-
-          var stateLoanMeans = nested;
-
-          var map = svg.selectAll('path')
-                        .data(geoData.features)
-                        .enter()
-                        .append('path')
-                        .attr('d', path)
-                        .style("fill", function(d) {
-                          var key = _.findKey(stateLoanMeans[2].values,
-                                    { 'key': abbr[d.properties.name]['abbr'] });
-                          if (key) {
-                            var total = stateLoanMeans[2].values[key].values.total;
-                            return color(total);
-                          }
-                        })
-                        .style('stroke', 'black')
-                        .style('stroke-width', 0.5);
-
-          var slider_div = d3.select("body")
-                            .append("div")
-                            .attr("width", 800)
-                            .attr('class', 'slider');
-
-          var slider = d3.select(".slider")
-                         .call(d3.slider()
-                         .axis(true)
-                         .min(2006)
-                         .max(2014)
-                         .step(1)
-                         .on("slide", function(evt, year) {
-                          debugger;
-                          console.log("The slider's current value is:" + year);
-                          updateMap(year);
-                        })
-                      );
-
+      return {
+        'year': year,
+        'state': state,
+        'total': norm_total
       }
-
-
     }
 
+    var nested = d3.nest()
+                   .key(function(d) {
+                      return d['loanStart'].getUTCFullYear();
+                   })
+                   .key(function(d) {
+                     return d['BorrowerState'];
+                   })
+                   .rollup(agg_state_by_year)
+                   .entries(loanData);
+
+    var year = nested[0].key;
+
+    pageData['loans'] = nested;
+    pageData['geo'] = geoData;
+
+    callback(nested, geoData, year)
+
+  }
+
+  formatData(loanData, function(nested, geoData, year){
+    colorMap(nested, geoData, year);
+    addSlider();
+  });
+}
+
+function colorMap(nested, geoData, year){
+
+    var margin = 200,
+        width = 1400 - margin,
+        height = 600 - margin;
+
+    var svg = d3.select("body")
+        .append("svg")
+        .attr("width", width + margin)
+        .attr("height", height + margin)
+        .append('g')
+        .attr('class', 'map');
+
+    var projection = d3.geo.albersUsa()
+                            .scale(50)
+                            .translate([width / 2, height / 1.2]);
+
+    var path = d3.geo.path();
+
+    var totalMin = d3.min(nested, function(d) {
+        return d.values[0].values['total'];
+    });
+
+    var totalMax = d3.max(nested, function(d) {
+        return d.values[0].values['total'];
+    });
+
+    var color = d3.scaleSequential(d3.interpolateBlues)
+                  .domain([totalMin,totalMax]);
+
+    var yearKey = _.findKey(nested,{ 'key': year }) ;
+
+    debugger
+
+    var map = svg.selectAll('path')
+                  .data(geoData.features, keyFunc)
+                  .enter()
+                  .append('path')
+                  .attr('d', path)
+                  .style("fill", function(d) {
+                    var abbrKey = _.findKey(nested[yearKey].values,
+                                  { 'key': abbr[d.properties.name]['abbr'] });
+                    if (abbrKey) {
+                      var total = nested[yearKey].values[abbrKey].values.total;
+                      return color(total);
+                    }
+                  })
+                  .style('stroke', 'black')
+                  .style('stroke-width', 0.5);
+}
+
+function addSlider(){
+
+    var slider_div = d3.select("body")
+                      .append("div")
+                      .attr("width", 800)
+                      .attr('class', 'slider');
+
+    var slider = d3.select(".slider")
+                   .call(d3.slider()
+                   .axis(true)
+                   .min(2006)
+                   .max(2014)
+                   .step(1)
+                   .on("slide", function(evt, year) {
+
+                       d3.select(".map")
+                         .selectAll("path")
+                         .remove();
+
+                       colorMap(pageData['loans'], pageData['geo'], year.toString())
+                  })
+                );
+}
 
 
-  var abbr = {'Alabama': {'abbr': 'AL', 'pop': 4780131},
+// function updateMap(year){
+//   var filtered = pageData['loans'].filter(function(d){
+//       return d['key'] == year;
+//   });
+//
+//
+//   d3.select("g")
+//     .selectAll("path")
+//     .remove();
+//
+//
+// }
+
+function keyFunc(d){
+  return d['id']
+}
+
+var abbr = {
+ 'Alabama': {'abbr': 'AL', 'pop': 4780131},
  'Alaska': {'abbr': 'AK', 'pop': 710249},
  'American Samoa': {'abbr': 'AS'},
  'Arizona': {'abbr': 'AZ', 'pop': 6392301},
@@ -214,7 +236,8 @@
  'Washington': {'abbr': 'WA', 'pop': 6724545},
  'West Virginia': {'abbr': 'WV', 'pop': 1853011},
  'Wisconsin': {'abbr': 'WI', 'pop': 5687289},
- 'Wyoming': {'abbr': 'WY', 'pop': 563767}}
+ 'Wyoming': {'abbr': 'WY', 'pop': 563767}
+}
 
 </script>
 
