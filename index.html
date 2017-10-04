@@ -28,10 +28,8 @@
 
         function callback(error, loanData, geoData){
 
-          var nested, total_max = formatData(loanData);
 
-          debugger
-          function formatData(loanData){
+          function formatData(loanData, callback){
 
             function agg_state_by_year(leaves){
 
@@ -40,7 +38,6 @@
               });
 
               var year = leaves[0]['loanYear']
-
               var state = leaves[0]['BorrowerState'];
 
               return {
@@ -48,7 +45,6 @@
                 'state': state,
                 'total': total
               }
-
             }
 
             var nested = d3.nest()
@@ -65,126 +61,70 @@
                return d.values[0].values['total'];
            });
 
-           debugger;
-           return nested, total_max
+           callback(nested, geoData)
+
           }
+
+          formatData(loanData, function(nested, geoData){
+            colorMap(nested, geoData)
+          });
       }
+
+      function colorMap(nested, geoData){
+          var margin = 200,
+              width = 1400 - margin,
+              height = 600 - margin;
+
+          var svg = d3.select("body")
+              .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+              .append('g')
+              .attr('class', 'map');
+
+            var projection = d3.geo.albersUsa()
+                                    .scale(100)
+                                    .translate([width / 2, height / 1.2]);
+
+            var path = d3.geo.path();
+
+             var map = svg.selectAll('path')
+                          .data(geoData.features)
+                          .enter()
+                          .append('path')
+                          .attr('d', path)
+                          .style('fill', 'lightGrey')
+                          .style('stroke', 'black')
+                          .style('stroke-width', 0.5);
+
+
+
+         var slider_div = d3.select("body")
+              .append("div")
+              .attr("width", 800)
+              .attr('class', 'slider');
+
+          var slider = d3.select(".slider")
+                         .call(d3.slider()
+                         .axis(true)
+                         .min(2006)
+                         .max(2014)
+                         .step(1)
+                         .on("slide", function(evt, {value:geoData}, value) {
+                          debugger;
+                          console.log("The slider's current value is:" + value);
+                          updateMap(value);
+                        }));
+
+      }
+
+
     }
 
-      //
-      // function drawMap(geoData) {
-      //
-      //   var margin = 200,
-      //       width = 1400 - margin,
-      //       height = 600 - margin;
-      //
-      //   var svg = d3.select("body")
-      //       .append("svg")
-      //       .attr("width", width + margin)
-      //       .attr("height", height + margin)
-      //       .append('g')
-      //       .attr('class', 'map');
-      //
-      //   var slider_div = d3.select("body")
-      //       .append("div")
-      //       .attr("width", 800)
-      //       .attr('class', 'slider');
-      //
-      //   // var projection = d3.geo.albersUsa()
-      //   //                        .scale(600)
-      //   //                        .translate([width / 2, height / 1.2]);
-      //   //
-      //   // var path = d3.geo.path().projection(projection);
-      //   //
-      //   // var map = svg.selectAll('path')
-      //   //              .data(geoData.features)
-      //   //              .enter()
-      //   //              .append('path')
-      //   //              .attr('d', path)
-      //   //              .style('fill', 'lightGrey')
-      //   //              .style('stroke', 'black')
-      //   //              .style('stroke-width', 0.5);
-      //
-      //
-      //   var slider = d3.select(".slider")
-      //                  .call(d3.slider()
-      //                  .axis(true)
-      //                  .min(2006)
-      //                  .max(2014)
-      //                  .step(1)
-      //                  .on("slide", function(evt, value) {
-      //                   console.log("The slider's current value is:" + value);
-      //                   colorMap(year);
-      //                 }));
-      //
-      //   function colorMap(year){
-      //
-      //   };
-      //
-      //   function formatData(loanData){
-      //
-      //     function agg_state_by_year(leaves){
-      //
-      //       var total = d3.sum(leaves, function(d){
-      //         return d['LoanOriginalAmount'];
-      //       });
-      //
-      //       var year = leaves[0]['loanYear']
-      //
-      //       var state = leaves[0]['BorrowerState'];
-      //
-      //       return {
-      //         'year': year,
-      //         'state': state,
-      //         'total': total
-      //       }
-      //
-      //     }
-      //
-      //     var nested = d3.nest()
-      //                    .key(function(d) {
-      //                       return d['loanStart'].getUTCFullYear();
-      //                    })
-      //                    .key(function(d) {
-      //                      return d['BorrowerState'];
-      //                    })
-      //                    .rollup(agg_state_by_year)
-      //                    .entries(loanData);
-      //
-      //      var projection = d3.geo.albersUsa()
-      //                             .scale(600)
-      //                             .translate([width / 2, height / 1.2]);
-      //
-      //      var path = d3.geo.path().projection(projection);
-      //
-      //      var map = svg.selectAll('path')
-      //                   .data(geoData.features)
-      //                   .enter()
-      //                   .append('path')
-      //                   .attr('d', path)
-      //                   .style('fill', 'lightGrey')
-      //                   .style('stroke', 'black')
-      //                   .style('stroke-width', 0.5);
-      //
-      //   };
-      //
-      //   d3.csv("data/prosperLoanData.csv", function(d) {
-      //     d['loanStart'] = new Date(d['LoanOriginationDate']);
-      //     d['loanYear'] = d['loanStart'].getFullYear();
-      //     return d;
-      //   }, formatData);
-
-// }
 </script>
 
   </head>
 <body>
-  <script type="text/javascript">
 
-
-
-  // d3.json("data/us_states.json", drawMap);
-
-  </script>
 </body>
 </html>
