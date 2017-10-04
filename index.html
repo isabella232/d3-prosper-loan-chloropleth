@@ -11,6 +11,7 @@
 <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
+<script src="https://d3js.org/d3-scale.v1.min.js"></script>
 
     <script type="text/javascript">
 
@@ -83,6 +84,7 @@
       }
 
       function colorMap(nested, geoData){
+
           var margin = 200,
               width = 1400 - margin,
               height = 600 - margin;
@@ -108,34 +110,20 @@
               return d.values[0].values['total'];
           });
 
-          debugger;
+          var color = d3.scaleSequential(d3.interpolateBlues)
+                        .domain([total_min,total_max]);
 
-          // var color = d3.scale.threshold()
-          //               .domain(d3.range(0, total_max))
-          //               .range(d3.schemeBlues[9]);
-
-          var color = d3.scale.linear().domain([total_min,total_max])
-                      .range(d3.schemeBlues[4]);
-
-          var stateLoanMeans = nested; // Create empty object for holding dataset
-
-          // nested.forEach(function(d) {
-          //   debugger;
-          //   state = +d.values[0].values.state
-          //   total = +d.values[0].values.total
-          //   stateLoanMeans[state] = total;
-          // });
-
+          var stateLoanMeans = nested;
 
           var map = svg.selectAll('path')
                         .data(geoData.features)
                         .enter()
                         .append('path')
                         .attr('d', path)
-                        //.style('fill', 'lightGrey')
                         .style("fill", function(d) {
-                          var key = _.findKey(stateLoanMeans[2].values, { 'key': abbr[d.properties.name]['abbr'] });
-                          if (key){
+                          var key = _.findKey(stateLoanMeans[2].values,
+                                    { 'key': abbr[d.properties.name]['abbr'] });
+                          if (key) {
                             var total = stateLoanMeans[2].values[key].values.total;
                             return color(total);
                           }
@@ -154,10 +142,10 @@
                          .min(2006)
                          .max(2014)
                          .step(1)
-                         .on("slide", function(evt, {value:geoData}, value) {
+                         .on("slide", function(evt, year) {
                           debugger;
-                          console.log("The slider's current value is:" + value);
-                          updateMap(value);
+                          console.log("The slider's current value is:" + year);
+                          updateMap(year);
                         })
                       );
 
