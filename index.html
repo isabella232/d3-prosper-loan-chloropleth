@@ -7,6 +7,10 @@
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script type ="text/javascript" src ="resources/d3-slider-master/d3.slider.js"/></script>
   <script src="http://d3js.org/queue.v1.min.js"></script>
+  <script src="https://d3js.org/d3-color.v1.min.js"></script>
+<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
 
     <script type="text/javascript">
 
@@ -21,29 +25,41 @@
         .defer(d3.csv, "data/prosperLoanData.csv", function(d) {
               d['loanStart'] = new Date(d['LoanOriginationDate']);
               d['loanYear'] = d['loanStart'].getFullYear();
-              return d;
+
+              if (d.BorrowerState != ""){
+                return d;
+              }
             })
         .defer(d3.json, "data/us_states.json")
         .await(callback);
 
         function callback(error, loanData, geoData){
 
-
           function formatData(loanData, callback){
 
+
+
             function agg_state_by_year(leaves){
+
+              var year = leaves[0]['loanYear'],
+                  state = leaves[0]['BorrowerState'],
+                  state_pop = 0;
+
+              if (state != "") {
+               var key = _.findKey( Object.values(abbr), { 'abbr':  state} )
+               var state_pop = Object.values(abbr)[key]['pop']
+              }
 
               var total = d3.sum(leaves, function(d){
                   return d['LoanOriginalAmount'];
               });
 
-              var year = leaves[0]['loanYear']
-              var state = leaves[0]['BorrowerState'];
+              var norm_total = total / state_pop;
 
               return {
                 'year': year,
                 'state': state,
-                'total': total
+                'total': norm_total
               }
             }
 
@@ -56,10 +72,6 @@
                            })
                            .rollup(agg_state_by_year)
                            .entries(loanData);
-
-           var total_max = d3.max(nested, function(d) {
-               return d.values[0].values['total'];
-           });
 
            callback(nested, geoData)
 
@@ -82,27 +94,59 @@
               .append('g')
               .attr('class', 'map');
 
-            var projection = d3.geo.albersUsa()
-                                    .scale(100)
-                                    .translate([width / 2, height / 1.2]);
+          var projection = d3.geo.albersUsa()
+                                  .scale(100)
+                                  .translate([width / 2, height / 1.2]);
 
-            var path = d3.geo.path();
+          var path = d3.geo.path();
 
-             var map = svg.selectAll('path')
-                          .data(geoData.features)
-                          .enter()
-                          .append('path')
-                          .attr('d', path)
-                          .style('fill', 'lightGrey')
-                          .style('stroke', 'black')
-                          .style('stroke-width', 0.5);
+          var total_min = d3.min(nested, function(d) {
+              return d.values[0].values['total'];
+          });
+
+          var total_max = d3.max(nested, function(d) {
+              return d.values[0].values['total'];
+          });
+
+          debugger;
+
+          // var color = d3.scale.threshold()
+          //               .domain(d3.range(0, total_max))
+          //               .range(d3.schemeBlues[9]);
+
+          var color = d3.scale.linear().domain([total_min,total_max])
+                      .range(d3.schemeBlues[4]);
+
+          var stateLoanMeans = nested; // Create empty object for holding dataset
+
+          // nested.forEach(function(d) {
+          //   debugger;
+          //   state = +d.values[0].values.state
+          //   total = +d.values[0].values.total
+          //   stateLoanMeans[state] = total;
+          // });
 
 
+          var map = svg.selectAll('path')
+                        .data(geoData.features)
+                        .enter()
+                        .append('path')
+                        .attr('d', path)
+                        //.style('fill', 'lightGrey')
+                        .style("fill", function(d) {
+                          var key = _.findKey(stateLoanMeans[2].values, { 'key': abbr[d.properties.name]['abbr'] });
+                          if (key){
+                            var total = stateLoanMeans[2].values[key].values.total;
+                            return color(total);
+                          }
+                        })
+                        .style('stroke', 'black')
+                        .style('stroke-width', 0.5);
 
-         var slider_div = d3.select("body")
-              .append("div")
-              .attr("width", 800)
-              .attr('class', 'slider');
+          var slider_div = d3.select("body")
+                            .append("div")
+                            .attr("width", 800)
+                            .attr('class', 'slider');
 
           var slider = d3.select(".slider")
                          .call(d3.slider()
@@ -114,12 +158,75 @@
                           debugger;
                           console.log("The slider's current value is:" + value);
                           updateMap(value);
-                        }));
+                        })
+                      );
 
       }
 
 
     }
+
+
+
+  var abbr = {'Alabama': {'abbr': 'AL', 'pop': 4780131},
+ 'Alaska': {'abbr': 'AK', 'pop': 710249},
+ 'American Samoa': {'abbr': 'AS'},
+ 'Arizona': {'abbr': 'AZ', 'pop': 6392301},
+ 'Arkansas': {'abbr': 'AR', 'pop': 2916025},
+ 'California': {'abbr': 'CA', 'pop': 37254522},
+ 'Colorado': {'abbr': 'CO', 'pop': 5029324},
+ 'Connecticut': {'abbr': 'CT', 'pop': 3574114},
+ 'Delaware': {'abbr': 'DE', 'pop': 897936},
+ 'District of Columbia': {'abbr': 'DC', 'pop': 601766},
+ 'Federated States Of Micronesia': {'abbr': 'FM'},
+ 'Florida': {'abbr': 'FL', 'pop': 18804592},
+ 'Georgia': {'abbr': 'GA', 'pop': 9688680},
+ 'Guam': {'abbr': 'GU'},
+ 'Hawaii': {'abbr': 'HI', 'pop': 1360301},
+ 'Idaho': {'abbr': 'ID', 'pop': 1567650},
+ 'Illinois': {'abbr': 'IL', 'pop': 12831574},
+ 'Indiana': {'abbr': 'IN', 'pop': 6484136},
+ 'Iowa': {'abbr': 'IA', 'pop': 3046869},
+ 'Kansas': {'abbr': 'KS', 'pop': 2853129},
+ 'Kentucky': {'abbr': 'KY', 'pop': 4339344},
+ 'Louisiana': {'abbr': 'LA', 'pop': 4533479},
+ 'Maine': {'abbr': 'ME', 'pop': 1328364},
+ 'Marshall Islands': {'abbr': 'MH'},
+ 'Maryland': {'abbr': 'MD', 'pop': 5773786},
+ 'Massachusetts': {'abbr': 'MA', 'pop': 6547813},
+ 'Michigan': {'abbr': 'MI', 'pop': 9884129},
+ 'Minnesota': {'abbr': 'MN', 'pop': 5303924},
+ 'Mississippi': {'abbr': 'MS', 'pop': 2968103},
+ 'Missouri': {'abbr': 'MO', 'pop': 5988928},
+ 'Montana': {'abbr': 'MT', 'pop': 989414},
+ 'Nebraska': {'abbr': 'NE', 'pop': 1826334},
+ 'Nevada': {'abbr': 'NV', 'pop': 2700691},
+ 'New Hampshire': {'abbr': 'NH', 'pop': 1316461},
+ 'New Jersey': {'abbr': 'NJ', 'pop': 8791953},
+ 'New Mexico': {'abbr': 'NM', 'pop': 2059198},
+ 'New York': {'abbr': 'NY', 'pop': 19378110},
+ 'North Carolina': {'abbr': 'NC', 'pop': 9535688},
+ 'North Dakota': {'abbr': 'ND', 'pop': 672591},
+ 'Northern Mariana Islands': {'abbr': 'MP'},
+ 'Ohio': {'abbr': 'OH', 'pop': 11536727},
+ 'Oklahoma': {'abbr': 'OK', 'pop': 3751615},
+ 'Oregon': {'abbr': 'OR', 'pop': 3831072},
+ 'Palau': {'abbr': 'PW'},
+ 'Pennsylvania': {'abbr': 'PA', 'pop': 12702857},
+ 'Puerto Rico': {'abbr': 'PR', 'pop': 3726157},
+ 'Rhode Island': {'abbr': 'RI', 'pop': 1052940},
+ 'South Carolina': {'abbr': 'SC', 'pop': 4625410},
+ 'South Dakota': {'abbr': 'SD', 'pop': 814195},
+ 'Tennessee': {'abbr': 'TN', 'pop': 6346298},
+ 'Texas': {'abbr': 'TX', 'pop': 25146100},
+ 'Utah': {'abbr': 'UT', 'pop': 2763888},
+ 'Vermont': {'abbr': 'VT', 'pop': 625741},
+ 'Virgin Islands': {'abbr': 'VI'},
+ 'Virginia': {'abbr': 'VA', 'pop': 8001041},
+ 'Washington': {'abbr': 'WA', 'pop': 6724545},
+ 'West Virginia': {'abbr': 'WV', 'pop': 1853011},
+ 'Wisconsin': {'abbr': 'WI', 'pop': 5687289},
+ 'Wyoming': {'abbr': 'WY', 'pop': 563767}}
 
 </script>
 
