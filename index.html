@@ -1,37 +1,46 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="resources/d3-slider-master/d3.slider.css">
-    <link rel="stylesheet" type="text/css" href="resources/css/style.css">
-    <script src="http://d3js.org/d3.v3.min.js"></script>
-    <script type ="text/javascript" src ="resources/d3-slider-master/d3.slider.js"/></script>
-    <script src="http://d3js.org/queue.v1.min.js"></script>
-    <script src="https://d3js.org/d3-color.v1.min.js"></script>
-    <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
-    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
-    <script src="https://d3js.org/d3-scale.v1.min.js"></script>
-    <script type="text/javascript">
+    <meta charset='utf-8'>
+    <link rel='stylesheet' type='text/css' href='resources/d3-slider-master/d3.slider.css'>
+    <link rel='stylesheet' type='text/css' href='resources/css/style.css'>
+    <script src='http://d3js.org/d3.v3.min.js'></script>
+    <script src='http://d3js.org/queue.v1.min.js'></script>
+    <script src='https://d3js.org/d3-color.v1.min.js'></script>
+    <script src='https://d3js.org/d3-interpolate.v1.min.js'></script>
+    <script src='https://d3js.org/d3-scale-chromatic.v1.min.js'></script>
+    <script src='https://d3js.org/d3-scale.v1.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js'></script>
+    <script type ='text/javascript' src='resources/d3-slider-master/d3.slider.js'></script>
+    <script type='text/javascript'>
 
+    /* The loadData function is called as page loads, which asynchronously loads
+    both the Prosper loan and US states GeoJSON files, then aggregates the loan
+    data to the year and state levels. Once these steps finish, the choropleth is
+    rendered and the year-by-year animation runs. Finally, the year slider
+    renders allowing the user to explore on their own.
+    */
+
+      // Stores aggregated loan data & state geoJSON
       var pageData = {};
 
       window.onload = loadData();
 
+      //asynchronously loads both the Prosper loan and US states GeoJSON files
       function loadData(){
 
-        queue().defer(d3.csv, "data/prosperLoanData.csv", function(d) {
+        queue().defer(d3.csv, 'data/prosperLoanData.csv', function(d) {
                     d['loanStart'] = new Date(d['LoanOriginationDate']);
                     d['loanYear'] = d['loanStart'].getFullYear();
-                    if ((d.BorrowerState != "") & (d.loanYear != 2014)){ return d; }
+                    if ((d.BorrowerState != '') & (d.loanYear != 2014)){ return d; }
                   })
-               .defer(d3.json, "data/us_states.json")
+               .defer(d3.json, 'data/us_states.json')
                .await(callback);
-
       }
 
       function callback(error, loanData, geoData){
 
+        //aggregates the loan data to the year and state levels
         function formatData(loanData, callback){
 
           function agg_state_by_year(leaves){
@@ -40,7 +49,7 @@
                 state = leaves[0]['BorrowerState'],
                 state_pop = 0;
 
-            if (state != "") {
+            if (state != '') {
              var key = _.findKey( Object.values(abbr), { 'abbr':  state} )
              var state_pop = Object.values(abbr)[key]['pop']
             }
@@ -49,6 +58,7 @@
                 return d['LoanOriginalAmount'];
             });
 
+            //loan density (i.e. totals loans / state population) by state & year
             var norm_total = total / state_pop;
 
             return {
@@ -78,6 +88,7 @@
 
         }
 
+        //choropleth is rendered and the year-by-year animation runs
         formatData(loanData, function(nested, geoData, year){
             colorMap(nested, geoData, year);
             addLegend();
@@ -85,34 +96,33 @@
         });
       }
 
+      //renders map of US with each state colored by loan density
       function colorMap(nested, geoData, year){
 
           var margin = 200,
               width = 1400 - margin,
               height = 550 - margin;
 
-          var svg = d3.select("body")
-              .append("svg")
+          var svg = d3.select('body')
+              .append('svg')
               .attr('class', 'svg_cont')
-              .attr("width", width + margin)
-              .attr("height", height + margin)
-              .attr("x",0)
-              .attr("y",10000)
+              .attr('width', width + margin)
+              .attr('height', height + margin)
+              .attr('x',0)
+              .attr('y',10000)
               .append('g')
               .attr('class', 'map');
-
 
           var path = d3.geo.path();
 
           var yearKey = _.findKey(nested,{ 'key': year }) ;
-
 
           var map = svg.selectAll('path')
                         .data(geoData.features)
                         .enter()
                         .append('path')
                         .attr('d', path)
-                        .style("fill", function(d) {
+                        .style('fill', function(d) {
                           var abbrKey = _.findKey(nested[yearKey].values,
                                         { 'key': abbr[d.properties.name]['abbr'] });
                           if (abbrKey) {
@@ -124,30 +134,34 @@
                         .style('stroke-width', 0.5);
       }
 
+      //renders year slider which updates choropleth loan densities
       function addSlider(){
 
-          var slider_div = d3.select("footer")
-                            .append("div")
-                            .attr("width", 800)
+          var slider_div = d3.select('footer')
+                            .append('div')
+                            .attr('width', 800)
                             .attr('class', 'slider');
 
-          pageData['slider']  = d3.select(".slider")
+          pageData['slider']  = d3.select('.slider')
                          .call(d3.slider()
                          .value(2013)
                          .axis(true)
                          .min(2006)
                          .max(2013)
                          .step(1)
-                         .on("slide", function(evt, year) {
+                         .on('slide', function(evt, year) {
 
-                             d3.selectAll(".svg_cont")
+                             d3.selectAll('.svg_cont')
                                .remove();
 
-                             colorMap(pageData['loans'], pageData['geo'], year.toString())
+                             colorMap(pageData['loans'],
+                                      pageData['geo'],
+                                      year.toString())
                         })
                       );
       }
 
+      //creates color scale, which returns hex code for loan density value
       function colorScale(){
 
         var totalMin = d3.min(pageData['loans'], function(d) {
@@ -169,7 +183,7 @@
 
       }
 
-
+      //cycles through loan years & updates choropleth when page loads
       function runYearAnimation(){
 
         var years = ['2007','2008','2009','2010','2011','2012','2013'],
@@ -177,10 +191,12 @@
 
         var yearInterval = setInterval(function(){
 
-          d3.selectAll(".svg_cont")
+          d3.selectAll('.svg_cont')
             .remove();
 
-          colorMap(pageData['loans'], pageData['geo'], years[yearIdx])
+          colorMap(pageData['loans'],
+                   pageData['geo'],
+                   years[yearIdx])
 
           if (years[yearIdx] == '2013') {
             clearInterval(yearInterval)
@@ -193,6 +209,7 @@
 
       }
 
+      //state abbrevation & population lookup
       var abbr = {
        'Alabama': {'abbr': 'AL', 'pop': 4780131},
        'Alaska': {'abbr': 'AK', 'pop': 710249},

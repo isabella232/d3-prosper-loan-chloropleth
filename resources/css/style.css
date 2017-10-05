@@ -1,5 +1,14 @@
-body {
-  margin-left: 200px;
-  margin-right: 200px;
-  margin-bottom: 200px;
+.svg_cont {
+  margin-left: 150px;
+  margin-right: 150px;
+  margin-top: 50px;
+}
+
+.slider {
+    width: 70%;
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    bottom: 0;
+    margin: auto;
 }
