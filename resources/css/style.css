@@ -29,3 +29,8 @@ h1 {
   font-weight: 500;
   line-height: 26.4px;
 }
+
+.legend {
+  margin-left: 50px;
+  font-size: 12px;
+}

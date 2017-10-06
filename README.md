@@ -30,3 +30,4 @@ After experimenting with several plot types (documented in initial_visualization
 - [Basic US State Map Tutorial](https://gist.github.com/michellechandra/0b2ce4923dc9b5809922)
 - [D3 Scale Chromatic](https://github.com/d3/d3-scale-chromatic)
 - [D3.js Slider Examples](http://thematicmapping.org/playground/d3/d3.slider/)
+- [Russian choropleth example](http://bl.ocks.org/KoGor/5685876)
