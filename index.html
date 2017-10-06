@@ -4,6 +4,7 @@
     <meta charset='utf-8'>
     <link rel='stylesheet' type='text/css' href='resources/d3-slider-master/d3.slider.css'>
     <link rel='stylesheet' type='text/css' href='resources/css/style.css'>
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Lato" />
     <script src='http://d3js.org/d3.v3.min.js'></script>
     <script src='http://d3js.org/queue.v1.min.js'></script>
     <script src='https://d3js.org/d3-color.v1.min.js'></script>
@@ -58,7 +59,7 @@
                 return d['LoanOriginalAmount'];
             });
 
-            //loan density (i.e. totals loans / state population) by state & year
+            //loan density (i.e. total loan amount / state population) by state & year
             var norm_total = total / state_pop;
 
             return {
@@ -90,6 +91,7 @@
 
         //choropleth is rendered and the year-by-year animation runs
         formatData(loanData, function(nested, geoData, year){
+            addHeader();
             colorMap(nested, geoData, year);
             addLegend();
             runYearAnimation();
@@ -128,6 +130,9 @@
                           if (abbrKey) {
                             var total = nested[yearKey].values[abbrKey].values.total;
                             return pageData['colorScale'](total);
+                          }
+                          else {
+                            return 'rgb(232,232,232)' //light grey
                           }
                         })
                         .style('stroke', 'black')
@@ -176,6 +181,13 @@
                       .domain([totalMin,totalMax]);
 
         return color
+      }
+
+      function addHeader(){
+        d3.select('body')
+          .append('h1')
+          .attr('id', 'title')
+          .html("Prosper Loan Density by State from 2006 - 2013")
       }
 
       function addLegend(){

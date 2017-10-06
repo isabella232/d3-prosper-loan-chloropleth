@@ -6,7 +6,7 @@ My D3 visualization maps Prosper (a peer-to-peer lender) loans from 2006 to 2014
 
 ## Design
 
-TBD
+After experimenting with several plot types (documented in initial_visualizations folder), and collecting feeback from my friends I chose to create a choropleth map, which I thought best illustrated the loan distribution across the US. The loan density, which I calculated by dividing the total loan amount for each state/year by that state's population, is encoded by the intensity of color along a yellow-green scale. The decisions to normalize for population and create a simpler color scale were based on feedback from Jean and Alex. Once the initial choropleth rendered, Chris provided suggested I animate the map to show the progression of loan density over time. I think this was one of the more successful design decisions incorporated and encourages the view to interact with the map once the animation finishes.
 
 ## Feedback
 
