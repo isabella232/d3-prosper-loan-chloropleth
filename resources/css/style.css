@@ -30,6 +30,11 @@ h1#title {
   line-height: 26.4px;
 }
 
+#countdown {
+  font-size: 80px;
+  text-align: center;
+}
+
 .legend {
   margin-left: 50px;
 }
@@ -44,7 +49,7 @@ h1.sum_cont {
 }
 
 p.sum_cont {
-  font-size: 14px;
+  font-size: 15px;
   bottom: 80;
   text-align: justify;
 }

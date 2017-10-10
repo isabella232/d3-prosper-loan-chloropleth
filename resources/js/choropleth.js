@@ -260,19 +260,35 @@ renders allowing the user to explore on their own.
       d3.selectAll('.svg_cont')
         .remove();
 
+      d3.selectAll('#countdown')
+        .remove()
+
       colorMap(pageData['loans'],
                pageData['geo'],
                years[yearIdx]);
 
+      d3.select('footer')
+        .append('h1')
+        .attr('id','countdown')
+        .html(years[yearIdx]);
+
       if (years[yearIdx] == '2013') {
         clearInterval(yearInterval)
-        addSlider();
-        addSummary();
+
+        setTimeout(function(){
+
+          d3.selectAll('#countdown')
+            .remove()
+
+          addSlider();
+          addSummary();
+
+        }, 2000);
       }
 
       yearIdx++;
 
-    }, 1000);
+    }, 1200);
 
   }
 
