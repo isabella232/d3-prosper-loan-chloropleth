@@ -34,8 +34,8 @@ renders allowing the user to explore on their own.
             state_pop = 0;
 
         if (state != '') {
-         var key = _.findKey( Object.values(abbr), { 'abbr':  state} )
-         var state_pop = Object.values(abbr)[key]['pop']
+          var key = _.findKey( Object.values(abbr), { 'abbr':  state} );
+          var state_pop = Object.values(abbr)[key]['pop'];
         }
 
         var total = d3.sum(leaves, function(d){
@@ -99,7 +99,7 @@ renders allowing the user to explore on their own.
 
       var path = d3.geo.path();
 
-      var yearKey = _.findKey(nested,{ 'key': year }) ;
+      var yearKey = _.findKey(nested,{ 'key': year });
 
       var map = pageData['svg'].selectAll('path')
                     .data(geoData.features)
@@ -113,9 +113,7 @@ renders allowing the user to explore on their own.
                         var total = nested[yearKey].values[abbrKey].values.total;
                         return pageData['colorScale'](total);
                       }
-                      else {
-                        return 'rgb(232,232,232)' //light grey
-                      }
+                      return 'rgb(232,232,232)' //light grey
                     })
                     .style('stroke', 'black')
                     .style('stroke-width', 0.5);
@@ -145,7 +143,7 @@ renders allowing the user to explore on their own.
 
                          colorMap(pageData['loans'],
                                   pageData['geo'],
-                                  year.toString())
+                                  year.toString());
                     })
                   );
   }
@@ -171,24 +169,24 @@ renders allowing the user to explore on their own.
     d3.select('body')
       .append('h1')
       .attr('id', 'title')
-      .html("Prosper Loan Density by State from 2006 - 2013")
+      .html('Prosper Loan Density by State from 2006 - 2013');
   }
 
   function addSummary(){
 
     d3.select('footer')
       .append('div')
-      .attr('class','sum_cont')
+      .attr('class','sum_cont');
 
     d3.select('.sum_cont')
       .append('h1')
       .attr('class','sum_cont')
-      .html("Observations")
+      .html('Observations');
 
     d3.select('.sum_cont')
       .append('p')
       .attr('class','sum_cont')
-      .html(summary_text)
+      .html(summary_text);
   }
 
 
@@ -221,33 +219,33 @@ renders allowing the user to explore on their own.
                          '$' + translateDomain(6).toFixed(2)];
 
     var legend = pageData['svg']
-                  .selectAll("g.legend")
+                  .selectAll('g.legend')
                   .data(color_domain)
                   .enter()
-                  .append("g")
-                  .attr("class", "legend");
+                  .append('g')
+                  .attr('class', 'legend');
 
     var ls_w = 20,
         ls_h = 20;
 
 
-    legend.append("rect")
-          .attr("x", width-80)
-          .attr("y", function(d, i){ return height - (i*ls_h) - 2*ls_h;})
-          .attr("width", ls_w)
-          .attr("height", ls_h)
-          .style("fill", function(d, i) { return color(d); })
-          .style("opacity", 0.8);
+    legend.append('rect')
+          .attr('x', width-80)
+          .attr('y', function(d, i){ return height - (i*ls_h) - 2*ls_h;})
+          .attr('width', ls_w)
+          .attr('height', ls_h)
+          .style('fill', function(d, i) { return color(d); })
+          .style('opacity', 0.8);
 
-    legend.append("text")
-          .attr("x", width-55)
-          .attr("y", function(d, i){ return height - (i*ls_h) - ls_h - 4;})
+    legend.append('text')
+          .attr('x', width-55)
+          .attr('y', function(d, i){ return height - (i*ls_h) - ls_h - 4;})
           .text(function(d, i){ return legend_labels[i]; });
 
-    legend.append("text")
-          .attr("x", width-110)
-          .attr("y", function(d, i){ return height - (6*ls_h) - ls_h - 10;})
-          .text("Loan Dollars / Person");
+    legend.append('text')
+          .attr('x', width-110)
+          .attr('y', function(d, i){ return height - (6*ls_h) - ls_h - 10;})
+          .text('Loan Dollars / Person');
 
   }
 
@@ -264,7 +262,7 @@ renders allowing the user to explore on their own.
 
       colorMap(pageData['loans'],
                pageData['geo'],
-               years[yearIdx])
+               years[yearIdx]);
 
       if (years[yearIdx] == '2013') {
         clearInterval(yearInterval)
@@ -279,7 +277,7 @@ renders allowing the user to explore on their own.
   }
 
   //observations summary
-  var summary_text = "Prosper is a peer-to-peer lender and the dataset used includes 113,937 loans with 81 variables (such as loan amount, borrower rate, borrower state) for each loan. I choose to investigate the progression of loan amount by state to get a picture of where the highest loan density occurs. Once I plotted overall loan density, I included a time component to show the geographic fluctuations in lendees. What I discovered was that the loan density traces the story of Prosper and the US economy as a whole; loan density starts out strongest on the West Coast (where Prosper was founded in 2005), then follows the movement of the US economy (with dips in 2008 - 2009)."
+  var summary_text = 'Prosper is a peer-to-peer lender and the dataset used includes 113,937 loans with 81 variables (such as loan amount, borrower rate, borrower state) for each loan. I choose to investigate the progression of loan amount by state to get a picture of where the highest loan density occurs. Once I plotted overall loan density, I included a time component to show the geographic fluctuations in lendees. What I discovered was that the loan density traces the story of Prosper and the US economy as a whole; loan density starts out strongest on the West Coast (where Prosper was founded in 2005), then follows the movement of the US economy (with dips in 2008 - 2009).'
 
   //state abbrevation & population lookup
   var abbr = {
